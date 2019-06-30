@@ -1,0 +1,7 @@
+[package]
+name = "rugesture"
+version = "0.1.0"
+authors = ["sanjeyac <sanjeyac>"]
+edition = "2018"
+
+[dependencies]
