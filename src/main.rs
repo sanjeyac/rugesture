@@ -116,9 +116,7 @@ fn run_debug_input() -> Result<(), Error> {
 
 
 fn main() {
-
     run_debug_input();
-    
 }
 
 #[cfg(test)]
