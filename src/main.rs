@@ -41,23 +41,26 @@ fn execute_command(line: &String, last_update: &mut String, config: &configurati
 
 fn main() -> Result<(),Box<Error>>{
 
-    // keys::key_press("alt+Tab".to_string());
-
-    let config = read_config(&"Settings.toml".to_string()).unwrap();
-
-
+    // temp variable
     let mut last_update = "".to_string();
-
     let LIBINPUT_DEBUG_COMMAND = "libinput-debug-events";
 
+    // read the configurations from the settings file
+    // each gesture has a key that will be pressed described in the configuration file
+    let config = read_config(&"Settings.toml".to_string()).unwrap();
+
+    
+    // run lib input command to catch gesture events
     let stdout = Command::new(LIBINPUT_DEBUG_COMMAND)
         .stdout(Stdio::piped())
         .spawn()?
         .stdout
         .ok_or_else(|| Error::new(ErrorKind::Other,"Could not capture standard output."))?;
 
+    // reader of lines of gesture events
     let reader = BufReader::new(stdout);
 
+    // for each gesture event execute a command from the config file
     reader
         .lines()
         .filter_map(|line| line.ok())
