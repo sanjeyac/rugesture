@@ -6,16 +6,16 @@ use std::io::prelude::*;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    three_finger_swipe: Swipe,
-    four_finger_swipe: Swipe,
+    pub three_finger_swipe: Swipe,
+    pub four_finger_swipe: Swipe,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Swipe {
-    up: String,
-    down: String,
-    left: String,
-    right: String
+    pub up: String,
+    pub down: String,
+    pub left: String,
+    pub right: String
 }
 
 pub fn read_config(filename: &String) -> Result<Config,Box<Error>> {

@@ -1,7 +1,7 @@
 
 use std::process::{Command, Stdio};
 use std::io::{BufRead, BufReader, Error, ErrorKind};
-use std::num::ParseFloatError;
+use std::num::{ParseFloatError,ParseIntError};
 
 #[allow(dead_code)]
 #[derive(PartialEq)]
@@ -9,17 +9,17 @@ use std::num::ParseFloatError;
 pub enum GestureDirection { NONE, UP, DOWN, LEFT, RIGHT }
 
 pub fn parse_direction_from(line: &String) -> GestureDirection {
-
-
     let elements = line.split_whitespace().collect::<Vec<_>>();
-
     let speeds = extract_speeds(elements[4].to_string());
-
     match speeds {
         Ok(speed) => direction_of( speed),
         Err(e) => GestureDirection::NONE
     }
- 
+}
+
+pub fn parse_fingers(line: &String) -> Result<u8,ParseIntError> {
+    let elements = line.split_whitespace().collect::<Vec<_>>();
+    return elements[3].to_string().parse::<u8>();
 }
 
 
@@ -74,19 +74,28 @@ pub fn sanitarize(line: &String) -> String {
     return cutted_line;
 }
 
-pub fn compute(line: String, last_update: &mut String) {        
+pub fn compute(line: &String, last_update: &mut String) -> Option<(u8,GestureDirection)> {        
 
     let safe_line = sanitarize(&line);
 
     if safe_line.contains("GESTURE_SWIPE_END") {        
         let direction = parse_direction_from(&last_update.to_string());
-        println!("COMMAND {:?} ", direction);
+        //println!("COMMAND {:?} ", direction);
+        let fingers = parse_fingers(&last_update.to_string());
+
+        if (fingers.is_err()){
+            return None;
+        }
+
+        return Some((fingers.unwrap(), direction));
+
     }    
     if safe_line.contains("GESTURE_SWIPE_UPDATE") {
         last_update.clear();
         last_update.push_str(&safe_line);
-
     }       
+
+    return None;
 }
 
 
