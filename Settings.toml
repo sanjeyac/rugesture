@@ -1,0 +1,11 @@
+[three_finger_swipe]
+up = "alt+Tab"
+down = "alt+Tab"
+left = "alt+Tab"
+right = "alt+Tab"
+
+[four_finger_swipe]
+up = "alt+Tab"
+down = "alt+Tab"
+left = "alt+Tab"
+right = "alt+Tab"
