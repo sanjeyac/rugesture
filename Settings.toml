@@ -1,0 +1,11 @@
+[three_finger_swipe]
+up = "3-swipe-up"
+down = "3-swipe-down"
+left = "3-swipe-left"
+right = "3-swipe-right"
+
+[four_finger_swipe]
+up = "4-swipe-up"
+down = "4-swipe-down"
+left = "4-swipe-left"
+right = "4-swipe-right"
