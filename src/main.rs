@@ -8,34 +8,34 @@ use std::process::{Command, Stdio};
 use std::io::{BufRead, BufReader, Error, ErrorKind};
 use std::num::ParseFloatError;
 
-fn execute_command(line: &String, last_update: &mut String, config: &configuration::Config){    
-    
-    match compute(line, last_update) {
-        Some(gesture) => {
 
-            if gesture.0 == 3 {
-                match gesture.1 {
-                    GestureDirection::UP => keys::key_press(&config.three_finger_swipe.up),
-                    GestureDirection::DOWN => keys::key_press(&config.three_finger_swipe.down),
-                    GestureDirection::LEFT => keys::key_press(&config.three_finger_swipe.left),
-                    GestureDirection::RIGHT => keys::key_press(&config.three_finger_swipe.right),
-                    GestureDirection::NONE => ()
-                }
-            }
-            
-            if gesture.0 == 4 {
-                match gesture.1 {
-                    GestureDirection::UP => keys::key_press(&config.four_finger_swipe.up),
-                    GestureDirection::DOWN => keys::key_press(&config.four_finger_swipe.down),
-                    GestureDirection::LEFT => keys::key_press(&config.four_finger_swipe.left),
-                    GestureDirection::RIGHT => keys::key_press(&config.four_finger_swipe.right),
-                    GestureDirection::NONE => ()
-                }
-            }
-        },
+fn press_key_on_gesture( fingers: u8, direction: &GestureDirection, config: &Config ) {
+    if fingers == 3 {
+        match direction {
+            GestureDirection::UP => keys::key_press(&config.three_finger_swipe.up),
+            GestureDirection::DOWN => keys::key_press(&config.three_finger_swipe.down),
+            GestureDirection::LEFT => keys::key_press(&config.three_finger_swipe.left),
+            GestureDirection::RIGHT => keys::key_press(&config.three_finger_swipe.right),
+            GestureDirection::NONE => ()
+        }
+    }
+    
+    if fingers == 4 {
+        match direction {
+            GestureDirection::UP => keys::key_press(&config.four_finger_swipe.up),
+            GestureDirection::DOWN => keys::key_press(&config.four_finger_swipe.down),
+            GestureDirection::LEFT => keys::key_press(&config.four_finger_swipe.left),
+            GestureDirection::RIGHT => keys::key_press(&config.four_finger_swipe.right),
+            GestureDirection::NONE => ()
+        }
+    }
+}
+
+fn execute_command(line: &String, last_update: &mut String, config: &configuration::Config){    
+    match compute(line, last_update) {
+        Some(gesture) => press_key_on_gesture(gesture.0, &gesture.1, config),
         None => ()
     }
-
 }
 
 
