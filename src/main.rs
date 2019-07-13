@@ -10,6 +10,9 @@ use std::num::ParseFloatError;
 
 
 fn press_key_on_gesture( fingers: u8, direction: &GestureDirection, config: &Config ) {
+
+    println!("fingers: {}, gesture {:?}",&fingers,&direction);
+
     if fingers == 3 {
         match direction {
             GestureDirection::UP => keys::key_press(&config.three_finger_swipe.up),
@@ -48,7 +51,6 @@ fn main() -> Result<(),Box<Error>>{
     // read the configurations from the settings file
     // each gesture has a key that will be pressed described in the configuration file
     let config = read_config(&"Settings.toml".to_string()).unwrap();
-
     
     // run lib input command to catch gesture events
     let stdout = Command::new(LIBINPUT_DEBUG_COMMAND)

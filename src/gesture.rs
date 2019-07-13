@@ -83,7 +83,7 @@ pub fn compute(line: &String, last_update: &mut String) -> Option<(u8,GestureDir
         //println!("COMMAND {:?} ", direction);
         let fingers = parse_fingers(&last_update.to_string());
 
-        if (fingers.is_err()){
+        if fingers.is_err() {
             return None;
         }
 
