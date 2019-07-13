@@ -1,73 +1,92 @@
-mod keys;
-mod configuration;
-mod gesture;
+mod event_input;
+mod logging;
+mod utils;
 
-use configuration::*;
-use gesture::*;
-use std::process::{Command, Stdio};
-use std::io::{BufRead, BufReader, Error, ErrorKind};
-use std::num::ParseFloatError;
+use event_input::*;
+use logging::*;
+
+use std::io;
+use std::io::prelude::*;
+use std::fs::File;
+
+use std::time::{SystemTime, UNIX_EPOCH};
+
+extern crate clap;
+use clap::{Arg, App};
 
 
-fn press_key_on_gesture( fingers: u8, direction: &GestureDirection, config: &Config ) {
+fn main() -> io::Result<()> {
 
-    println!("fingers: {}, gesture {:?}",&fingers,&direction);
+// CLI MENU GENERATOR
+    let matches = App::new("Multi touch logger")
+        .version("0.1")
+        .author("Sanjeya Cooray")
+        .about("Logging multitouch to files as csv and svg")
+        .arg(Arg::with_name("input")
+                 .short("i")
+                 .long("input")
+                 .takes_value(true)
+                 .help("Input device in /dev/input"))        
+        .arg(Arg::with_name("csv")
+                 .short("c")
+                 .long("csv")
+                 .takes_value(true)
+                 .help("CSV output file"))
+        .arg(Arg::with_name("svg")
+                 .short("s")
+                 .long("svg")
+                 .takes_value(true)
+                 .help("SVG output file"))
+        .arg(Arg::with_name("time")
+                 .short("t")
+                 .long("time")
+                 .takes_value(true)
+                 .help("recording time in secs"))         
+        .get_matches();
 
-    if fingers == 3 {
-        match direction {
-            GestureDirection::UP => keys::key_press(&config.three_finger_swipe.up),
-            GestureDirection::DOWN => keys::key_press(&config.three_finger_swipe.down),
-            GestureDirection::LEFT => keys::key_press(&config.three_finger_swipe.left),
-            GestureDirection::RIGHT => keys::key_press(&config.three_finger_swipe.right),
-            GestureDirection::NONE => ()
+    let input = matches.value_of("input").unwrap_or("/dev/input/event7");
+    let csv = matches.value_of("csv").unwrap_or("output.csv");
+    let svg = matches.value_of("svg").unwrap_or("output.svg");
+
+    let seconds = matches.value_of("time").unwrap_or("3").parse::<u128>().unwrap_or(3);
+
+// TIMER
+    let start = SystemTime::now();
+    let since_the_epoch = start.duration_since(UNIX_EPOCH).expect("Time went backwards");
+
+    let mut device_input_file = File::open(input)?;
+    let mut buffer = [0; 24];
+    let mut event_queue: Vec<EventInput> = Vec::new();
+    let mut status_history: Vec<TouchStatus> = Vec::new();
+    let mut status = init_status();
+
+    loop {
+        device_input_file.read(&mut buffer[..])?; //wait to an event in the device file e put data inside the buffer
+        let current_input_event = create_input_from(&buffer);     
+
+        let current_time = SystemTime::now();
+        let current_since_the_epoch = current_time.duration_since(UNIX_EPOCH).expect("Time went backwards");
+
+        let diff = current_since_the_epoch.as_millis() - since_the_epoch.as_millis();
+        
+        if diff > seconds*1000 { // record  3 second then stop everything at the next click
+            break;
+        }
+
+        if current_input_event.code == 0 && current_input_event.evtype == 0 {
+            update_status_by(&event_queue, &mut status);
+            status_history.push(status.clone());
+            event_queue.clear();
+        } else {
+            event_queue.push(current_input_event);
         }
     }
-    
-    if fingers == 4 {
-        match direction {
-            GestureDirection::UP => keys::key_press(&config.four_finger_swipe.up),
-            GestureDirection::DOWN => keys::key_press(&config.four_finger_swipe.down),
-            GestureDirection::LEFT => keys::key_press(&config.four_finger_swipe.left),
-            GestureDirection::RIGHT => keys::key_press(&config.four_finger_swipe.right),
-            GestureDirection::NONE => ()
-        }
-    }
-}
 
-fn execute_command(line: &String, last_update: &mut String, config: &configuration::Config){    
-    match compute(line, last_update) {
-        Some(gesture) => press_key_on_gesture(gesture.0, &gesture.1, config),
-        None => ()
-    }
-}
-
-
-fn main() -> Result<(),Box<Error>>{
-
-    // temp variable
-    let mut last_update = "".to_string();
-    let LIBINPUT_DEBUG_COMMAND = "libinput-debug-events";
-
-    // read the configurations from the settings file
-    // each gesture has a key that will be pressed described in the configuration file
-    let config = read_config(&"Settings.toml".to_string()).unwrap();
-    
-    // run lib input command to catch gesture events
-    let stdout = Command::new(LIBINPUT_DEBUG_COMMAND)
-        .stdout(Stdio::piped())
-        .spawn()?
-        .stdout
-        .ok_or_else(|| Error::new(ErrorKind::Other,"Could not capture standard output."))?;
-
-    // reader of lines of gesture events
-    let reader = BufReader::new(stdout);
-
-    // for each gesture event execute a command from the config file
-    reader
-        .lines()
-        .filter_map(|line| line.ok())
-        .for_each(|line| execute_command( &line, &mut last_update, &config ));
-
+// log to svg and csv
+    save_as_csv(csv, &status_history);
+    save_as_svg(svg, &status_history);
+   
     Ok(())
-
 }
+
+
